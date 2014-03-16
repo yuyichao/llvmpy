@@ -507,8 +507,9 @@ PyObject* llvm_ParseBitCodeFile(llvm::StringRef Buf, llvm::LLVMContext& Ctx,
 {
     using namespace llvm;
     MemoryBuffer* MB = MemoryBuffer::getMemBuffer(Buf);
-    ErrorOr<Module*> M = parseBitcodeFile(MB, Ctx);
-    if (error_code EC = M.getError()) {
+#if LLVM_VERSION_MAJOR >= 3 && LLVM_VERSION_MINOR >= 5
+    ErrorOr<Module*> MOrErr = parseBitcodeFile(MB, Ctx);
+    if (error_code EC = MOrErr.getError()) {
         if (FObj) {
             auto_pyobject buf = PyBytes_FromString(EC.message().c_str());
             if (NULL == callwrite(FObj, *buf)){
@@ -517,8 +518,25 @@ PyObject* llvm_ParseBitCodeFile(llvm::StringRef Buf, llvm::LLVMContext& Ctx,
             }
         }
     }
+    Module *M = MOrErr.get();
+#else
+    Module* M;
+    if (FObj) {
+        std::string ErrStr;
+        M = ParseBitcodeFile(MB, Ctx, &ErrStr);
+        auto_pyobject buf = PyBytes_FromString(ErrStr.c_str());
+        if (NULL == callwrite(FObj, *buf)){
+            return NULL;
+        }
+//        if (-1 == PyFile_WriteString(ErrStr.c_str(), FObj)) {
+//            return NULL;
+//        }
+    } else {
+        M = ParseBitcodeFile(MB, Ctx);
+    }
+#endif
     delete MB;
-    return pycapsule_new(M.get(), "llvm::Module");
+    return pycapsule_new(M, "llvm::Module");
 }
 
 
