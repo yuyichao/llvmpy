@@ -21,7 +21,10 @@ int64_arg = cast(int, Int64)
 
 @DIBuilder
 class DIBuilder:
-    _include_ = 'llvm/DIBuilder.h'
+    if LLVM_VERSION >= (3, 5):
+        _include_ = 'llvm/IR/DIBuilder.h'
+    else:
+        _include_ = 'llvm/DIBuilder.h'
     new = Constructor(ref(Module))
     delete = Destructor()
 

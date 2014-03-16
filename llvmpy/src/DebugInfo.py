@@ -21,7 +21,10 @@ DINameSpace = llvm.Class(DIScope)
 DILexicalBlockFile = llvm.Class(DIScope)
 DILexicalBlock = llvm.Class(DIScope)
 
-llvm.includes.add('llvm/DebugInfo.h')
+if LLVM_VERSION >= (3, 5):
+    llvm.includes.add('llvm/IR/DebugInfo.h')
+else:
+    llvm.includes.add('llvm/DebugInfo.h')
 
 return_bool = cast(Bool, bool)
 return_stringref = cast(StringRef, str)

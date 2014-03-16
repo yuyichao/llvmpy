@@ -4,7 +4,10 @@ from .ADT.StringRef import StringRef
 from .Module import Module
 from .LLVMContext import LLVMContext
 
-llvm.includes.add('llvm/Linker.h')
+if LLVM_VERSION >= (3, 5):
+    llvm.includes.add('llvm/Linker/Linker.h')
+else:
+    llvm.includes.add('llvm/Linker.h')
 
 Linker = llvm.Class()
 

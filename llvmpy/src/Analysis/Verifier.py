@@ -3,7 +3,10 @@ from ..namespace import llvm
 from ..Module import Module
 from ..Value import Function
 
-llvm.includes.add('llvm/Analysis/Verifier.h')
+if LLVM_VERSION >= (3, 5):
+    llvm.includes.add('llvm/IR/Verifier.h')
+else:
+    llvm.includes.add('llvm/Analysis/Verifier.h')
 
 VerifierFailureAction = llvm.Enum('VerifierFailureAction',
                                   '''AbortProcessAction
@@ -22,4 +25,3 @@ verifyFunction = llvm.Function('verifyFunction',
                                cast(Bool, bool),  # failed?
                                ref(Function),
                                VerifierFailureAction)
-
