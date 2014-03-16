@@ -101,7 +101,7 @@ int py_int_to(PyObject *intobj, int64_t & val){
         val = PyInt_AsLong(intobj);
     }
     if (PyErr_Occurred()){
-        return NULL;
+        return 0;
     }
     // success
     return 1;

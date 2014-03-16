@@ -507,22 +507,18 @@ PyObject* llvm_ParseBitCodeFile(llvm::StringRef Buf, llvm::LLVMContext& Ctx,
 {
     using namespace llvm;
     MemoryBuffer* MB = MemoryBuffer::getMemBuffer(Buf);
-    Module* M;
-    if (FObj) {
-        std::string ErrStr;
-        M = ParseBitcodeFile(MB, Ctx, &ErrStr);
-        auto_pyobject buf = PyBytes_FromString(ErrStr.c_str());
-        if (NULL == callwrite(FObj, *buf)){
-            return NULL;
+    ErrorOr<Module*> M = parseBitcodeFile(MB, Ctx);
+    if (error_code EC = M.getError()) {
+        if (FObj) {
+            auto_pyobject buf = PyBytes_FromString(EC.message().c_str());
+            if (NULL == callwrite(FObj, *buf)){
+                delete MB;
+                return NULL;
+            }
         }
-//        if (-1 == PyFile_WriteString(ErrStr.c_str(), FObj)) {
-//            return NULL;
-//        }
-    } else {
-        M = ParseBitcodeFile(MB, Ctx);
     }
     delete MB;
-    return pycapsule_new(M, "llvm::Module");
+    return pycapsule_new(M.get(), "llvm::Module");
 }
 
 
@@ -1073,4 +1069,3 @@ PyObject* llvm_sys_isBigEndianHost()
         Py_RETURN_FALSE;
 }
 #endif
-
