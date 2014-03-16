@@ -722,10 +722,52 @@ PyObject* Module_list_named_metadata(llvm::Module* Mod)
 
 }
 
+#if LLVM_VERSION_MAJOR >= 3 && LLVM_VERSION_MINOR >= 5
+namespace llvm {
+typedef enum {
+    AbortProcessAction, /* verifier will print to stderr and abort() */
+    PrintMessageAction, /* verifier will print to stderr and return true */
+    ReturnStatusAction  /* verifier will just return true */
+} VerifierFailureAction;
+
+static bool
+verifyModule(const Module &M, VerifierFailureAction Action,
+             std::string *OutMessages) {
+    raw_ostream *DebugOS = Action != ReturnStatusAction ? &errs() : 0;
+    raw_string_ostream MsgsOS(*OutMessages);
+
+    LLVMBool Result = verifyModule(M, OutMessages ? &MsgsOS : DebugOS);
+
+    // Duplicate the output to stderr.
+    if (DebugOS && OutMessages)
+        *DebugOS << MsgsOS.str();
+
+    if (Action == AbortProcessAction && Result) {
+        report_fatal_error("Broken module found, compilation aborted!");
+    }
+
+    if (OutMessages) {
+        MsgsOS.flush();
+    }
+    return Result;
+}
+
+static bool
+verifyFunction(const Function &Fn, VerifierFailureAction Action)
+{
+    bool Result = verifyFunction(Fn, Action != ReturnStatusAction ? &errs() : 0);
+
+    if (Action == AbortProcessAction && Result)
+        report_fatal_error("Broken function found, compilation aborted!");
+    return Result;
+}
+}
+#endif
+
 static
 PyObject* llvm_verifyModule(const llvm::Module& Fn,
-                              llvm::VerifierFailureAction Action,
-                              PyObject* ErrMsg)
+                            llvm::VerifierFailureAction Action,
+                            PyObject* ErrMsg)
 {
     std::string errmsg;
     bool failed = llvm::verifyModule(Fn, Action, &errmsg);
