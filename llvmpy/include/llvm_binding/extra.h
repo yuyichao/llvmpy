@@ -21,6 +21,13 @@
     #include <llvm/Intrinsics.h>
     #include <llvm/IRBuilder.h>
 #endif
+#if LLVM_VERSION_MAJOR >= 3 && LLVM_VERSION_MINOR >= 5
+    #include <llvm/Linker/Linker.h>
+    #include <llvm/IR/Verifier.h>
+#else
+    #include <llvm/Linker.h>
+    #include <llvm/Analysis/Verifier.h>
+#endif
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Support/FormattedStream.h>
 #include <llvm/Support/MemoryBuffer.h>
@@ -29,8 +36,6 @@
 #include <llvm/Bitcode/ReaderWriter.h>
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/ExecutionEngine/GenericValue.h>
-#include <llvm/Linker.h>
-#include <llvm/Analysis/Verifier.h>
 #include <llvm/PassRegistry.h>
 #include <llvm/Support/Host.h>
 
